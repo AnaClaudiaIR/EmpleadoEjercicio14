@@ -1,0 +1,26 @@
+package org.example;
+
+import java.sql.*;
+
+public class Main2 {
+    public static void main(String[] args) {
+        try (Connection connection = DriverManager.getConnection(
+                DBConfig.getUrl(),
+                DBConfig.getUser(),
+                DBConfig.getPassword()
+        )) {
+            String sql = "UPDATE empleado SET nombre = ?, salario = ? WHERE id = ?";
+            
+            //Introducir en el statement los parámetros
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, "Kiro");
+            preparedStatement.setDouble(2,2500.67);
+            preparedStatement.setInt(3,1);
+            int filasActualizadas = preparedStatement.executeUpdate(); //Mostrar número de filas afectadas
+            System.out.println("Datos actualizados. Filas afectadas: " + filasActualizadas);
+
+        }catch (SQLException e){
+            System.out.println("Error --> "+e.getMessage());
+        }
+    }
+}

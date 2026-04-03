@@ -1,62 +1,42 @@
 package org.example;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        //Crear conexión + statement
+        //Scanner sc = new Scanner(System.in);
+        //Try para hacer la conexión
         try (Connection connection = DriverManager.getConnection(
                 DBConfig.getUrl(),
                 DBConfig.getUser(),
                 DBConfig.getPassword()
         );  Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false); //Desactivar el commit automático
 
-            //Línea para crear la tabla
-            String tablaDep =
-                    "CREATE TABLE DEPARTAMENTO \n" +
-                    "    ( \n" +
-                    "     ID_dep     NUMBER (3)  NOT NULL , \n" +
-                    "     nombre_dep VARCHAR2 (100)  NOT NULL \n" +
-                    "    ) ";
-            statement.executeUpdate(tablaDep);//Ejecutar la línea
+            //Try para intentar meter los datos --> Si no sale hace rollback
+            try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO DEPARTAMENTO (ID_DEP, NOMBRE_DEP) VALUES (?,?)")) {
+                preparedStatement.setInt(1,1);
+                preparedStatement.setString(2,"Recursos humanos");
+                preparedStatement.executeUpdate();
 
-            //Alterar tabla departamento --> Clave primaria
-            String alterDep = "ALTER TABLE DEPARTAMENTO \n" +
-                    "    ADD CONSTRAINT DEPARTAMENTO_PK PRIMARY KEY ( ID_dep )";
-            statement.execute(alterDep);
+                preparedStatement.setInt(1, 2);
+                preparedStatement.setString(2, "Gestión de datos");
+                preparedStatement.executeUpdate();
 
-            System.out.println("Tabla Departamento creada.");
+                preparedStatement.setInt(1, 3);
+                preparedStatement.setString(2, "Supervisores");
+                preparedStatement.executeUpdate();
 
-            String tableEmp = "CREATE TABLE EMPLEADO2 \n" +
-                    "    ( \n" +
-                    "     ID_emp              NUMBER  NOT NULL , \n" +
-                    "     nombre_emp          VARCHAR2 (100)  NOT NULL , \n" +
-                    "     ID_dep NUMBER (3)   NOT NULL \n" +
-                    "    )";
-            statement.execute(tableEmp);
+                connection.commit(); //Hacer el commit al acabar
+                System.out.println("Transacción exitosa");
 
-            String alterEmp1 = "ALTER TABLE EMPLEADO2 \n" +
-                    "    ADD CONSTRAINT EMPLEADO2_PK PRIMARY KEY ( ID_emp )";
-            statement.execute(alterEmp1);
-
-            //Alterar tabla empelado para establecer clave foranea con dep
-            String alterEmp2 = "ALTER TABLE EMPLEADO2 \n" +
-                    "    ADD CONSTRAINT EMPLEADO2_DEPARTAMENTO_FK FOREIGN KEY \n" +
-                    "    ( \n" +
-                    "     ID_dep\n" +
-                    "    ) \n" +
-                    "    REFERENCES DEPARTAMENTO \n" +
-                    "    ( \n" +
-                    "     ID_dep\n" +
-                    "    ) \n";
-            statement.execute(alterEmp2);
-            System.out.println("Tabla Empleado creada.");
-
+            } catch (SQLException e) {
+                connection.rollback(); //Hacer rollback de todo si hay más de una operación
+                System.out.println("Error al hacer la operación -> " + e.getMessage());
+            }
         } catch (SQLException e){
-            System.out.println("ERROR --> "+e.getMessage());
+            System.out.println("ERROR -> "+e.getMessage());
         }
     }
 }
